@@ -92,7 +92,7 @@ export default function AuthPage() {
         return;
       }
 
-      setActiveSession(user);
+      setActiveSession(user, rememberMe);
       setActiveUser(user);
     }, 450);
   };
@@ -156,7 +156,7 @@ export default function AuthPage() {
 
       setCredSuccess("Credentials updated successfully! Signing you in...");
       setTimeout(() => {
-        setActiveSession(result.user!);
+        setActiveSession(result.user!, rememberMe);
         setActiveUser(result.user!);
       }, 1200);
     }, 500);
@@ -179,50 +179,181 @@ export default function AuthPage() {
       <main className="relative z-10 w-full flex-1 flex items-center justify-center my-auto">
         {/* If user is logged in, show authenticated dashboard preview */}
         {activeUser ? (
-          <div className="glass-panel w-full max-w-lg p-8 md:p-10 rounded-[32px] text-center text-white relative transition-all duration-500 animate-in fade-in zoom-in-95">
-            <div className="flex justify-center mb-5">
-              <EMSLogo size={100} />
+          /* Authenticated Dashboard View (by Role) */
+          <div className="glass-panel w-full max-w-2xl p-6 md:p-8 rounded-[32px] text-white relative transition-all duration-500 animate-in fade-in zoom-in-95 shadow-2xl">
+            {/* Top Bar with Logo & Role Badge */}
+            <div className="flex items-center justify-between pb-6 border-b border-white/15">
+              <div className="flex items-center gap-3">
+                <EMSLogo size={56} />
+                <div>
+                  <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white">
+                    {activeUser.role === "Department Manager" ? "Manager Command Center" : "Employee Dashboard"}
+                  </h1>
+                  <p className="text-xs text-teal-200/80">
+                    Welcome back, <span className="font-semibold text-white">{activeUser.name}</span> • {activeUser.id}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
+                  activeUser.role === "Department Manager"
+                    ? "bg-emerald-500/20 border border-emerald-400/40 text-emerald-300"
+                    : "bg-teal-500/20 border border-teal-400/40 text-teal-300"
+                }`}>
+                  <CheckCircle size={13} />
+                  <span>{activeUser.role}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="p-2 rounded-xl bg-white/10 hover:bg-red-500/20 hover:border-red-400/40 border border-white/20 text-white/80 hover:text-red-200 transition-colors"
+                  title="Log out"
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
             </div>
 
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-500/20 border border-teal-400/40 text-teal-300 text-xs font-semibold uppercase tracking-wider mb-3">
-              <CheckCircle size={14} />
-              <span>Logged In • {activeUser.role}</span>
+            {/* Role-Specific Content */}
+            {activeUser.role === "Employee" ? (
+              /* EMPLOYEE DASHBOARD PREVIEW */
+              <div className="mt-6 space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Time Tracker Widget */}
+                  <div className="bg-white/10 rounded-2xl p-4 border border-white/20">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-teal-300">Time Tracker</span>
+                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-200">Shift 9AM - 6PM</span>
+                    </div>
+                    <div className="text-2xl font-mono font-bold tracking-wider my-1 text-white">
+                      09:12:44 AM
+                    </div>
+                    <p className="text-[11px] text-teal-100/70 mb-3">
+                      Grace period: 15 min (cutoff 9:15 AM) • Status: <span className="text-emerald-400 font-semibold">Timed In</span>
+                    </p>
+                    <button
+                      type="button"
+                      className="btn-teal w-full py-2 px-4 rounded-xl text-xs font-bold uppercase tracking-wider"
+                    >
+                      Time Out
+                    </button>
+                  </div>
+
+                  {/* Attendance Overview Widget */}
+                  <div className="bg-white/10 rounded-2xl p-4 border border-white/20 flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-teal-300">Week Overview</span>
+                        <span className="text-xs font-bold text-white">38.5 hrs</span>
+                      </div>
+                      <p className="text-[11px] text-teal-100/70 mb-2">Mon - Fri Logged Hours</p>
+                      <div className="flex items-end gap-1.5 h-14 pt-2">
+                        {[
+                          { day: "M", hrs: "8.5h", color: "bg-emerald-400" },
+                          { day: "T", hrs: "8.0h", color: "bg-emerald-400" },
+                          { day: "W", hrs: "7.5h", color: "bg-amber-400" },
+                          { day: "T", hrs: "8.0h", color: "bg-emerald-400" },
+                          { day: "F", hrs: "6.5h", color: "bg-emerald-400" },
+                          { day: "S", hrs: "Rest", color: "bg-slate-500" },
+                          { day: "S", hrs: "Rest", color: "bg-slate-500" },
+                        ].map((item, idx) => (
+                          <div key={idx} className="flex-1 flex flex-col items-center gap-1">
+                            <div className={`w-full rounded-t-sm ${item.color}`} style={{ height: item.hrs.includes("h") ? "75%" : "20%" }} />
+                            <span className="text-[10px] text-white/70">{item.day}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Account Details Footer */}
+                <div className="bg-white/5 rounded-2xl p-4 border border-white/15 text-xs text-teal-100/90 flex flex-wrap justify-between gap-3">
+                  <div>
+                    <span className="text-white/60">Position: </span>
+                    <span className="font-semibold text-white">{activeUser.position}</span>
+                  </div>
+                  <div>
+                    <span className="text-white/60">Department: </span>
+                    <span className="font-semibold text-white">{activeUser.department}</span>
+                  </div>
+                  <div>
+                    <span className="text-white/60">Username: </span>
+                    <span className="font-mono text-cyan-300">@{activeUser.username}</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* MANAGER DASHBOARD PREVIEW */
+              <div className="mt-6 space-y-5">
+                {/* Metric Cards Row */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="bg-white/10 rounded-2xl p-3 border border-white/20 text-center">
+                    <span className="text-[11px] text-teal-200/80 block">Present Today</span>
+                    <span className="text-2xl font-bold text-emerald-400">8</span>
+                  </div>
+                  <div className="bg-white/10 rounded-2xl p-3 border border-white/20 text-center">
+                    <span className="text-[11px] text-teal-200/80 block">Late</span>
+                    <span className="text-2xl font-bold text-amber-400">2</span>
+                  </div>
+                  <div className="bg-white/10 rounded-2xl p-3 border border-white/20 text-center">
+                    <span className="text-[11px] text-teal-200/80 block">On Leave</span>
+                    <span className="text-2xl font-bold text-cyan-400">1</span>
+                  </div>
+                  <div className="bg-white/10 rounded-2xl p-3 border border-white/20 text-center">
+                    <span className="text-[11px] text-teal-200/80 block">Pending Leaves</span>
+                    <span className="text-2xl font-bold text-purple-400">3</span>
+                  </div>
+                </div>
+
+                {/* Pending Approvals Queue */}
+                <div className="bg-white/10 rounded-2xl p-4 border border-white/20">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-xs font-bold uppercase tracking-wider text-teal-300">Pending Department Approvals</span>
+                    <span className="text-[11px] text-cyan-300">5 items awaiting review</span>
+                  </div>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/10">
+                      <div>
+                        <span className="font-semibold text-white">John Doe</span>
+                        <span className="text-white/60 ml-2">Sick Leave (2 days)</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 text-[10px] font-semibold">Pending</span>
+                    </div>
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/10">
+                      <div>
+                        <span className="font-semibold text-white">Peter Vance</span>
+                        <span className="text-white/60 ml-2">Task: Brand Guidelines Rev.</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 text-[10px] font-semibold">In Review</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Shortcuts */}
+                <div className="flex gap-3">
+                  <button type="button" className="btn-teal flex-1 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider">
+                    + Post Announcement
+                  </button>
+                  <button type="button" className="btn-teal flex-1 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider">
+                    + Assign Task
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Return / Logout Button */}
+            <div className="mt-6 pt-4 border-t border-white/15 flex justify-between items-center">
+              <span className="text-xs text-white/60 font-mono">Session saved via {activeUser.role} token</span>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="text-xs font-semibold text-cyan-300 hover:text-cyan-200 underline cursor-pointer"
+              >
+                Log Out & Return to Login
+              </button>
             </div>
-
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2">
-              Welcome, {activeUser.name}!
-            </h1>
-            <p className="text-sm text-teal-100/80 mb-6 max-w-sm mx-auto">
-              You are signed in as <span className="font-semibold text-white">{activeUser.position}</span> ({activeUser.department} Department).
-            </p>
-
-            <div className="bg-white/10 rounded-2xl p-4 mb-6 border border-white/20 text-left text-xs space-y-2 text-teal-100">
-              <div className="flex justify-between">
-                <span className="text-white/60">Employee ID:</span>
-                <span className="font-mono font-medium text-white">{activeUser.id}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-white/60">Email:</span>
-                <span className="font-mono text-white">{activeUser.email}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-white/60">Username:</span>
-                <span className="text-white">@{activeUser.username}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-white/60">Role Mode:</span>
-                <span className="font-semibold text-teal-300">{activeUser.role}</span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="btn-teal w-full py-3 px-6 rounded-2xl font-bold text-sm tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <LogOut size={16} />
-              <span>Log Out & Return to Login</span>
-            </button>
           </div>
         ) : (
           /* Glassmorphic Auth Card */
@@ -499,8 +630,8 @@ export default function AuthPage() {
 
                 {/* Old / Temp Password Field */}
                 <div className="mb-3">
-                  <label htmlFor="oldPassword" aria-label="New Password" className="block text-xs md:text-sm font-medium text-teal-50 mb-1 pl-1">
-                    New Password
+                  <label htmlFor="oldPassword" className="block text-xs md:text-sm font-medium text-teal-50 mb-1 pl-1">
+                    Old Password
                   </label>
                   <div className="glass-input-wrapper rounded-2xl flex items-center px-4 py-3 text-white">
                     <Lock size={18} className="text-white/70 mr-3 shrink-0" />
@@ -527,7 +658,7 @@ export default function AuthPage() {
 
                 {/* New Password / Confirm Field */}
                 <div className="mb-5">
-                  <label htmlFor="newPassword" aria-label="New Password" className="block text-xs md:text-sm font-medium text-teal-50 mb-1 pl-1">
+                  <label htmlFor="newPassword" className="block text-xs md:text-sm font-medium text-teal-50 mb-1 pl-1">
                     New Password
                   </label>
                   <div className="glass-input-wrapper rounded-2xl flex items-center px-4 py-3 text-white">
@@ -551,6 +682,9 @@ export default function AuthPage() {
                       {showNewPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
                   </div>
+                  <p className="text-[11px] text-teal-100/70 mt-1.5 pl-1">
+                    At least 8 characters, with a letter and a number.
+                  </p>
                 </div>
 
                 {/* Primary Action Button */}

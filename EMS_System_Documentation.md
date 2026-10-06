@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Project type** | School project – exploring Agentic Coding |
-| **Document version** | 2.0 (Fully Aligned & Grilling Finalized) |
+| **Document version** | 2.1 (Auth flow finalized via grilling) |
 | **Date** | October 6, 2026 |
 | **Coverage** | Employee role & Department Manager role (fully aligned specifications, data models, workflows, and UI interactions) |
 
@@ -12,7 +12,7 @@
 1. [System Overview](#1-system-overview)
 2. [User Roles & Demo Accounts](#2-user-roles--demo-accounts)
 3. [Navigation and Layout](#3-navigation-and-layout)
-4. [Account Access & Demo Switcher](#4-account-access--demo-switcher)
+4. [Account Access](#4-account-access)
 5. [Employee Modules](#5-employee-modules)
 6. [Department Manager Modules](#6-department-manager-modules)
 7. [Attendance Rules & Calculation](#7-attendance-rules--calculation)
@@ -39,7 +39,7 @@ EMS is developed as a comprehensive demonstration of agentic frontend and full-l
 |---|---|
 | **Employee Role:** Login/Activation, Dashboard, Announcements, Tasks (Submission & Reports), DTR (Time In/Out & Dispute Requests), Leave Request, Profile Management | Admin role and enterprise user provisioning backend |
 | **Manager Role:** Login/Activation, Rich Dashboard, Announcement Authoring (`+ Post Announcement`), Department Directory & Attendance, Task Assignment & Deliverable Review, Leave Request Approval / Rejection | Live payroll processing engine |
-| **Demo Enhancements:** Quick Role Switcher bar on Login screen, mock LocalStorage database with initial seed dataset | Hardware biometric device physical drivers (simulated entrance clock-in fallback) |
+| **Demo Data:** Mock LocalStorage database with an initial seed dataset (seed accounts in Section 2) | Hardware biometric device physical drivers (simulated entrance clock-in fallback) |
 
 ---
 
@@ -82,18 +82,35 @@ Every screen after login shares a unified layout: a persistent dark sidebar on t
 
 ---
 
-## 4. Account Access & Demo Switcher
+## 4. Account Access
 
-### 4.1 Quick Demo Switcher Bar
-To facilitate evaluation, the Login page features a top banner / quick selection pills:
-- **"Log in as Employee (John Doe - EMP-1012)"**
-- **"Log in as Manager (Sarah Connor - EMP-1001)"**
-Clicking either button auto-fills the credentials and activates the respective role session immediately.
+The seed accounts in Section 2 are the only demo shortcut. The Login page has no role switcher; testers type the seed credentials.
 
-### 4.2 Standard Authentication & Activation Flow
-1. **Login Page:** Email and password inputs, masked password toggle, Remember Me, Forgot Password link, and Account Activation link.
+### 4.1 Authentication and Activation Flow
+1. **Login Page:** Email (or username) and password inputs, masked password toggle, Remember me, Forgot Password link, and Account Activation link.
 2. **Account Activation:** User enters `EMP-####` and company email. Verifying matches sends a temporary default password and redirects to Login.
-3. **First-Time Credential Update:** On initial login with default password, users are prompted to set their permanent username and custom password before landing on their Dashboard.
+3. **First-Time Credential Update:** On first login with the default password, users must set a permanent username and password before reaching their Dashboard.
+
+### 4.2 Login Rules
+
+| Rule | Specification |
+|---|---|
+| Identifier | Email or username. Email works from activation; username works once credentials are updated. |
+| Default password | Valid only until credentials are updated. After the update it stops working. |
+| Error | Any mismatch shows the inline message "Invalid email or password." without saying which field was wrong. |
+| Remember me | Checked: session is kept in LocalStorage and survives browser restarts. Unchecked: session is kept in SessionStorage and ends when the tab closes. |
+
+### 4.3 Credential Rules
+
+| Field | Rule |
+|---|---|
+| Username | At least 3 characters. |
+| Password | At least 8 characters, with at least one letter and one number. |
+| Old password | Must match the current password (the default password on first login). Otherwise: "Old password does not match our records." |
+
+### 4.4 Forgot Password
+
+Forgot Password is a simulated email dispatch. It shows a confirmation message only. No email is sent and there is no reset page. A real reset flow is out of scope for this prototype.
 
 ---
 
@@ -258,7 +275,11 @@ All open items from specification review and grilling sessions are formally reso
 | Decision Area | Finalized Specification |
 |---|---|
 | **Data Persistence** | Reactive LocalStorage state engine with pre-seeded mockup dataset. Persists CRUD modifications across page reloads. |
-| **Demo Experience** | Quick Demo Switcher bar on Login screen allowing 1-click login as Demo Employee (`EMP-1012`) or Demo Manager (`EMP-1001`). |
+| **Demo Experience** | No Quick Demo Switcher. Seed accounts (`EMP-1012`, `EMP-1001`) are listed in Section 2 and entered manually. |
+| **Remember me** | LocalStorage session when checked; SessionStorage when unchecked. |
+| **Forgot Password** | Simulated email dispatch only; real reset flow out of scope. |
+| **Credential Rules** | Password: 8+ characters with a letter and a number. Username: 3+ characters. |
+| **Login Identifier** | Email or username. Default password stops working after the credential update. |
 | **Work Schedule Alignment** | Standardized to `9:00 AM – 6:00 PM` with 15-minute grace period across all screens, charts, and calculations. |
 | **Attendance Status Alignment** | Unified 5-status model (`Present`, `Late`, `Half-day`, `Absent`, `Rest day`) shared by both Employee DTR and Manager Attendance. |
 | **Leave Categories** | Standardized 4 categories: `Sick Leave`, `Vacation Leave`, `Casual / Emergency Leave`, and `Maternity / Paternity Leave` (10 days balance each). |

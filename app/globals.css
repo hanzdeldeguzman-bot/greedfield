@@ -10,7 +10,7 @@
     --text-white: #ffffff;
     --text-muted: #d1e2e1;
     --glass-bg: rgba(255, 255, 255, 0.1);
-    --glass-border: rgba(255, 255, 255, 0.4);
+    --glass-border: rgba(255, 255, 255, 0.45);
     --glass-input: rgba(255, 255, 255, 0.12);
     --error-red: #ef4444;
   }
@@ -41,7 +41,7 @@
 .glass-input-wrapper {
   background: rgba(255, 255, 255, 0.12);
   border: 1.5px solid rgba(255, 255, 255, 0.45);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-input-wrapper:focus-within {
@@ -58,18 +58,23 @@
   transition: all 0.2s ease-in-out;
 }
 
-.btn-teal:hover {
+.btn-teal:hover:not(:disabled) {
   background: linear-gradient(180deg, #3c8d89 0%, #2b6d69 100%);
   box-shadow: 0 6px 20px 0 rgba(14, 45, 43, 0.6), 0 0 15px rgba(56, 189, 248, 0.3);
   transform: translateY(-1px);
 }
 
-.btn-teal:active {
+.btn-teal:active:not(:disabled) {
   transform: translateY(1px);
   box-shadow: 0 2px 8px 0 rgba(14, 45, 43, 0.4);
 }
 
-/* Custom animation for subtle background crystal glow */
+.btn-teal:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Custom animations */
 @keyframes crystalFloat {
   0%, 100% {
     transform: translateY(0px) rotate(0deg) scale(1);
@@ -94,4 +99,24 @@
 
 .animate-glow {
   animation: pulseGlow 6s ease-in-out infinite;
+}
+
+@keyframes shakeError {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+
+.animate-shake {
+  animation: shakeError 0.4s ease-in-out;
+}
+
+/* Respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-crystal,
+  .animate-glow,
+  .animate-shake {
+    animation: none !important;
+    transition: none !important;
+  }
 }

@@ -68,7 +68,8 @@ export function saveStoredUsers(users: UserAccount[]): void {
 
 export function getActiveSession(): UserAccount | null {
   if (typeof window === "undefined") return null;
-  const stored = localStorage.getItem(ACTIVE_SESSION_KEY);
+  const stored =
+    sessionStorage.getItem(ACTIVE_SESSION_KEY) ?? localStorage.getItem(ACTIVE_SESSION_KEY);
   if (!stored) return null;
   try {
     return JSON.parse(stored);
@@ -77,13 +78,21 @@ export function getActiveSession(): UserAccount | null {
   }
 }
 
-export function setActiveSession(user: UserAccount | null): void {
+/** Remember me checked: LocalStorage (survives restarts). Unchecked: SessionStorage (ends with the tab). */
+export function setActiveSession(user: UserAccount | null, remember = true): void {
   if (typeof window === "undefined") return;
+  localStorage.removeItem(ACTIVE_SESSION_KEY);
+  sessionStorage.removeItem(ACTIVE_SESSION_KEY);
   if (user) {
-    localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(user));
-  } else {
-    localStorage.removeItem(ACTIVE_SESSION_KEY);
+    (remember ? localStorage : sessionStorage).setItem(ACTIVE_SESSION_KEY, JSON.stringify(user));
   }
+}
+
+export const PASSWORD_RULE_MESSAGE =
+  "Password must be at least 8 characters with at least one letter and one number.";
+
+export function isValidPassword(pass: string): boolean {
+  return pass.length >= 8 && /[A-Za-z]/.test(pass) && /\d/.test(pass);
 }
 
 export function authenticateUser(
@@ -92,19 +101,21 @@ export function authenticateUser(
 ): { success: boolean; user?: UserAccount; error?: string } {
   const users = getStoredUsers();
   const trimmed = emailOrUsername.trim().toLowerCase();
-  
+
+  // Email works from activation; username only once credentials are updated.
   const user = users.find(
-    (u) => u.email.toLowerCase() === trimmed || u.username.toLowerCase() === trimmed
+    (u) =>
+      u.email.toLowerCase() === trimmed ||
+      (!u.needsCredentialUpdate && u.username.toLowerCase() === trimmed)
   );
 
-  if (!user) {
-    return { success: false, error: "Invalid email or password." };
-  }
+  const invalid = { success: false, error: "Invalid email or password." };
+  if (!user) return invalid;
 
-  // Check password
-  if (user.password !== pass && user.defaultPassword !== pass) {
-    return { success: false, error: "Invalid email or password." };
-  }
+  // The default password is only valid until credentials are updated.
+  const passOk =
+    user.password === pass || (user.needsCredentialUpdate && user.defaultPassword === pass);
+  if (!passOk) return invalid;
 
   return { success: true, user };
 }
@@ -129,6 +140,9 @@ export function activateUserAccount(
   }
 
   const user = users[userIdx];
+  if (user.isActivated && !user.needsCredentialUpdate) {
+    return { success: false, error: "This account is already activated. Please log in." };
+  }
   user.isActivated = true;
   user.needsCredentialUpdate = true;
   user.defaultPassword = "TempPass123!";
@@ -157,8 +171,10 @@ export function updateUserCredentials(
 
   const user = users[userIdx];
 
-  // Verify old password
-  if (user.password !== oldPass && user.defaultPassword !== oldPass) {
+  // Verify old password (the default password only counts on first login)
+  const oldOk =
+    user.password === oldPass || (user.needsCredentialUpdate && user.defaultPassword === oldPass);
+  if (!oldOk) {
     return { success: false, error: "Old password does not match our records." };
   }
 
@@ -166,13 +182,14 @@ export function updateUserCredentials(
     return { success: false, error: "Username must be at least 3 characters." };
   }
 
-  if (!newPass || newPass.length < 6) {
-    return { success: false, error: "New password must be at least 6 characters." };
+  if (!isValidPassword(newPass)) {
+    return { success: false, error: PASSWORD_RULE_MESSAGE };
   }
 
   user.username = newUsername.trim();
   user.password = newPass;
   user.needsCredentialUpdate = false;
+  user.defaultPassword = undefined;
   users[userIdx] = user;
   saveStoredUsers(users);
 
